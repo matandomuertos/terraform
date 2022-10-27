@@ -122,6 +122,21 @@ resource "aws_nat_gateway" "NATGateway" {
 
 ## Client connection ##
 
+# Virtual Private Gateway
+resource "aws_vpn_gateway" "VPNGateway" {
+  vpc_id = aws_vpc.vpc.id
+  amazon_side_asn = var.aws_vpn_gateway_amazon_side_asn
+  tags = {
+    Name = "VPN Gateway (${var.vpc_name})"
+  }
+}
+
+# Attach Virtual Private Gateway to VPC
+resource "aws_vpn_gateway_attachment" "VPNAttachToVPC" {
+  vpc_id = aws_vpc.vpc.id
+  vpn_gateway_id = aws_vpn_gateway.VPNGateway.id
+}
+
 # Customer Gateway
 resource "aws_customer_gateway" "site1" {
   bgp_asn = var.aws_customer_gateway_bgp_asn
@@ -133,22 +148,17 @@ resource "aws_customer_gateway" "site1" {
   }
 }
 
-# VPN Gateway
-resource "aws_vpn_gateway" "VPNGateway" {
-  vpc_id = aws_vpc.vpc.id
-  amazon_side_asn = var.aws_vpn_gateway_amazon_side_asn
+# Site-to-Site VPN Connection (Customer Gateway -> Virtual Private Gateway)
+resource "aws_vpn_connection" "siteToSiteVPNConnection" {
+  customer_gateway_id = aws_customer_gateway.site1.id
+  outside_ip_address_type = var.aws_vpn_connection_outside_ip_address_type
+  vpn_gateway_id = aws_vpn_gateway.VPNGateway.id
+  type = "ipsec.1"
+
   tags = {
-    Name = "VPN Gateway (${var.vpc_name})"
+    Name = "site1 VPN Connection (${var.vpc_name})"
   }
 }
-
-# Attach VPN Gateway to VPC
-resource "aws_vpn_gateway_attachment" "VPNAttachToVPC" {
-  vpc_id = aws_vpc.vpc.id
-  vpn_gateway_id = aws_vpn_gateway.VPNGateway.id
-}
-
-# Create vpn connection: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpn_connection
 
 ## Routes ##
 

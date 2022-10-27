@@ -30,6 +30,11 @@ variable "private_subnet_cidrs" {
   default = ["10.216.0.128/25", "10.216.0.0/25", "10.216.1.0/25"]
 }
 
+variable "aws_vpn_gateway_amazon_side_asn" {
+  type = number
+  default = 64512
+}
+
 variable "aws_customer_gateway_bgp_asn" {
   type = number
   default = 65000
@@ -45,7 +50,12 @@ variable "aws_customer_gateway_type" {
   default = "ipsec.1"
 }
 
-variable "aws_vpn_gateway_amazon_side_asn" {
-  type = number
-  default = 64512
+variable "aws_vpn_connection_outside_ip_address_type" {
+  type = string
+  default = "PublicIpv4"
+}
+
+variable "aws_vpn_connection_type" {
+  type = string
+  default = "ipsec.1"
 }
