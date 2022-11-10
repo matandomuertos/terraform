@@ -12,6 +12,15 @@ variable "eks_version" {
   default = "1.22"
 }
 
+variable "ip_family" {
+  type = string
+  default = "ipv4"
+}
+
+variable "service_ipv4_cidr" {
+  type = string
+}
+
 variable "control_plane_logs" {
   type        = list(string)
   # check https://docs.aws.amazon.com/en_us/eks/latest/userguide/control-plane-logs.html

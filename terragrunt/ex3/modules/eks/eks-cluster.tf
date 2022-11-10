@@ -11,11 +11,17 @@ resource "aws_eks_cluster" "eksCluster" {
   version = var.eks_version
   enabled_cluster_log_types = var.control_plane_logs
 
+  kubernetes_network_config {
+    ip_family = var.ip_family
+    service_ipv4_cidr = var.service_ipv4_cidr
+  }
+
   vpc_config {
     security_group_ids = [aws_security_group.eksControlPlaneSG.id]
     subnet_ids = var.private_subnet_ids
-    endpoint_private_access = "true"
+    endpoint_private_access = "false"
     endpoint_public_access = "true"
+    public_access_cidrs = ["1.1.1.1/32","2.2.2.2/32"]
   }
 }
 
