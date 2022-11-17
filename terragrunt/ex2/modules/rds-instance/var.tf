@@ -4,7 +4,7 @@ variable "aws_region" {
 }
 
 variable "subnetids" {
-  type = list
+  type = list(any)
 }
 
 variable "rds_name" {
@@ -12,32 +12,32 @@ variable "rds_name" {
 }
 
 variable "allocated_storage" {
-  type = number
+  type    = number
   default = 20
 }
 
 variable "storage_type" {
-  type = string
+  type    = string
   default = "gp2"
 }
 
 variable "engine" {
-  type = string
+  type    = string
   default = "mysql"
 }
 
 variable "engine_version" {
-  type = string
+  type    = string
   default = "8.0.28"
 }
 
 variable "instance_class" {
-  type = string
+  type    = string
   default = "db.m5.large"
 }
 
 variable "db_name" {
-  type = string
+  type    = string
   default = "testdb1"
 }
 
@@ -50,11 +50,11 @@ variable "password" {
 }
 
 variable "publicly_accessible" {
-  type = bool
+  type    = bool
   default = false
 }
 
 variable "skip_final_snapshot" {
-  type = bool
+  type    = bool
   default = true
 }

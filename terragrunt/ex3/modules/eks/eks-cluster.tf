@@ -6,46 +6,23 @@ resource "aws_eks_cluster" "eksCluster" {
     aws_cloudwatch_log_group.CloudWatchLogsRetentionCluster,
   ]
 
-  name = var.cluster_name
-  role_arn = aws_iam_role.eksIAMRole.arn
-  version = var.eks_version
+  name                      = var.cluster_name
+  role_arn                  = aws_iam_role.eksIAMRole.arn
+  version                   = var.eks_version
   enabled_cluster_log_types = var.control_plane_logs
 
   kubernetes_network_config {
-    ip_family = var.ip_family
+    ip_family         = var.ip_family
     service_ipv4_cidr = var.service_ipv4_cidr
   }
 
   vpc_config {
-    security_group_ids = [aws_security_group.eksControlPlaneSG.id]
-    subnet_ids = var.private_subnet_ids
+    security_group_ids      = [aws_security_group.eksControlPlaneSG.id]
+    subnet_ids              = var.private_subnet_ids
     endpoint_private_access = "false"
-    endpoint_public_access = "true"
-    public_access_cidrs = var.public_access_cidrs
+    endpoint_public_access  = "true"
+    public_access_cidrs     = var.public_access_cidrs
   }
-}
-
-# EKS Add-ons
-resource "aws_eks_addon" "coredns" {
-  depends_on = [
-    aws_eks_cluster.eksCluster
-  ]
-
-  cluster_name = aws_eks_cluster.eksCluster.name
-  addon_name = "coredns"
-  addon_version = var.coredns_addon_version
-  resolve_conflicts = "OVERWRITE"
-}
-
-resource "aws_eks_addon" "kube-proxy" {
-  depends_on = [
-    aws_eks_cluster.eksCluster
-  ]
-
-  cluster_name = aws_eks_cluster.eksCluster.name
-  addon_name = "kube-proxy"
-  addon_version = var.kubeproxy_addon_version
-  resolve_conflicts = "OVERWRITE"
 }
 
 # EKS IAM Role
@@ -70,18 +47,18 @@ POLICY
 
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role = aws_iam_role.eksIAMRole.name
+  role       = aws_iam_role.eksIAMRole.name
 }
 
 resource "aws_iam_role_policy_attachment" "eks-AmazonEKSVPCResourceController" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-  role = aws_iam_role.eksIAMRole.name
+  role       = aws_iam_role.eksIAMRole.name
 }
 
 # Control Plane Security Group
 resource "aws_security_group" "eksControlPlaneSG" {
   description = "EKS Control Plane Security Group"
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
 
   tags = {
     Name = "eks-${var.cluster_name}-ControlPlaneSG"
@@ -90,6 +67,6 @@ resource "aws_security_group" "eksControlPlaneSG" {
 
 # CloudWatch Logs retention (I should write the same to access-logs, addons, dataplane and host too but I'm lazy)
 resource "aws_cloudwatch_log_group" "CloudWatchLogsRetentionCluster" {
-  name = "/aws/eks/${var.cluster_name}/cluster"
+  name              = "/aws/eks/${var.cluster_name}/cluster"
   retention_in_days = var.cloudwatch_logs_retention
 }

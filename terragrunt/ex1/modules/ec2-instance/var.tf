@@ -15,10 +15,10 @@ variable "instance_name" {
 }
 
 variable "ami" {
-  type        = string
-  default     = "ami-070b208e993b59cea"
+  type    = string
+  default = "ami-070b208e993b59cea"
 }
 
 variable "subnetid" {
-  type        = string
+  type = string
 }

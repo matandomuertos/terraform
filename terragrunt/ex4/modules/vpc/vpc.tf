@@ -1,6 +1,6 @@
 # VPC
 resource "aws_vpc" "vpc" {
-  cidr_block = var.cidr_block
+  cidr_block       = var.cidr_block
   instance_tenancy = var.instance_tenancy
 
   tags = {
@@ -9,8 +9,8 @@ resource "aws_vpc" "vpc" {
 }
 
 resource "aws_ssm_parameter" "vpcIDParameter" {
-  name = "/test/vpc/id"
-  type = "String"
+  name  = "/test/vpc/id"
+  type  = "String"
   value = aws_vpc.vpc.id
 }
 
@@ -30,10 +30,10 @@ resource "aws_ssm_parameter" "vpcIDParameter" {
 resource "aws_subnet" "publicSubnets" {
   count = length(var.public_subnet_cidrs)
 
-  vpc_id = aws_vpc.vpc.id
-  cidr_block = element(var.public_subnet_cidrs, count.index)
+  vpc_id            = aws_vpc.vpc.id
+  cidr_block        = element(var.public_subnet_cidrs, count.index)
   availability_zone = element(var.availability_zones, count.index)
-  
+
   tags = {
     Name = "Public Subnet ${count.index + 1}"
   }
@@ -43,10 +43,10 @@ resource "aws_subnet" "publicSubnets" {
 resource "aws_subnet" "privateSubnets" {
   count = length(var.private_subnet_cidrs)
 
-  vpc_id = aws_vpc.vpc.id
-  cidr_block = var.private_subnet_cidrs[count.index]
+  vpc_id            = aws_vpc.vpc.id
+  cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
-  
+
   tags = {
     Name = "Private Subnet ${count.index + 1}"
   }
@@ -87,7 +87,7 @@ resource "aws_route_table" "privateRouteTable" {
 resource "aws_route_table_association" "publicRouteTableAssociation" {
   count = length(var.public_subnet_cidrs)
 
-  subnet_id = aws_subnet.publicSubnets[count.index].id
+  subnet_id      = aws_subnet.publicSubnets[count.index].id
   route_table_id = aws_route_table.publicRouteTable[count.index].id
 }
 
@@ -95,7 +95,7 @@ resource "aws_route_table_association" "publicRouteTableAssociation" {
 resource "aws_route_table_association" "privateRouteTableAssociation" {
   count = length(var.private_subnet_cidrs)
 
-  subnet_id = aws_subnet.privateSubnets[count.index].id
+  subnet_id      = aws_subnet.privateSubnets[count.index].id
   route_table_id = aws_route_table.privateRouteTable[count.index].id
 }
 
@@ -113,7 +113,7 @@ resource "aws_nat_gateway" "NATGateway" {
   count = length(var.public_subnet_cidrs)
 
   allocation_id = aws_eip.elasticIP[count.index].id
-  subnet_id = aws_subnet.publicSubnets[count.index].id
+  subnet_id     = aws_subnet.publicSubnets[count.index].id
 
   tags = {
     Name = "NAT Gateway ${count.index + 1} (${var.vpc_name})"
@@ -124,7 +124,7 @@ resource "aws_nat_gateway" "NATGateway" {
 
 # Virtual Private Gateway
 resource "aws_vpn_gateway" "VPNGateway" {
-  vpc_id = aws_vpc.vpc.id
+  vpc_id          = aws_vpc.vpc.id
   amazon_side_asn = var.aws_vpn_gateway_amazon_side_asn
   tags = {
     Name = "VPN Gateway (${var.vpc_name})"
@@ -133,15 +133,15 @@ resource "aws_vpn_gateway" "VPNGateway" {
 
 # Attach Virtual Private Gateway to VPC
 resource "aws_vpn_gateway_attachment" "VPNAttachToVPC" {
-  vpc_id = aws_vpc.vpc.id
+  vpc_id         = aws_vpc.vpc.id
   vpn_gateway_id = aws_vpn_gateway.VPNGateway.id
 }
 
 # Customer Gateway
 resource "aws_customer_gateway" "site1" {
-  bgp_asn = var.aws_customer_gateway_bgp_asn
+  bgp_asn    = var.aws_customer_gateway_bgp_asn
   ip_address = var.aws_customer_gateway_ip_address
-  type = var.aws_customer_gateway_type
+  type       = var.aws_customer_gateway_type
 
   tags = {
     Name = "site1 Gateway (${var.vpc_name})"
@@ -150,10 +150,10 @@ resource "aws_customer_gateway" "site1" {
 
 # Site-to-Site VPN Connection (Customer Gateway -> Virtual Private Gateway)
 resource "aws_vpn_connection" "siteToSiteVPNConnection" {
-  customer_gateway_id = aws_customer_gateway.site1.id
+  customer_gateway_id     = aws_customer_gateway.site1.id
   outside_ip_address_type = var.aws_vpn_connection_outside_ip_address_type
-  vpn_gateway_id = aws_vpn_gateway.VPNGateway.id
-  type = "ipsec.1"
+  vpn_gateway_id          = aws_vpn_gateway.VPNGateway.id
+  type                    = "ipsec.1"
 
   tags = {
     Name = "site1 VPN Connection (${var.vpc_name})"
@@ -166,25 +166,25 @@ resource "aws_vpn_connection" "siteToSiteVPNConnection" {
 resource "aws_route" "IGWPublicSubnetRoute" {
   count = length(var.public_subnet_cidrs)
 
-  route_table_id = aws_route_table.publicRouteTable[count.index].id
+  route_table_id         = aws_route_table.publicRouteTable[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id = aws_internet_gateway.internetGateway.id
+  gateway_id             = aws_internet_gateway.internetGateway.id
 }
 
 # Allow private subnets to access internet
 resource "aws_route" "NATPrivateSubnetRoute" {
   count = length(var.private_subnet_cidrs)
 
-  route_table_id = aws_route_table.privateRouteTable[count.index].id
+  route_table_id         = aws_route_table.privateRouteTable[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id = aws_nat_gateway.NATGateway[count.index].id
+  nat_gateway_id         = aws_nat_gateway.NATGateway[count.index].id
 }
 
 # Allow private subnets to access network in customer site (VPN)
 resource "aws_route" "VPNPrivateSubnetRoute" {
   count = length(var.private_subnet_cidrs)
 
-  route_table_id = aws_route_table.privateRouteTable[count.index].id
+  route_table_id         = aws_route_table.privateRouteTable[count.index].id
   destination_cidr_block = "192.0.0.0/8"
-  gateway_id = aws_vpn_gateway.VPNGateway.id
+  gateway_id             = aws_vpn_gateway.VPNGateway.id
 }
