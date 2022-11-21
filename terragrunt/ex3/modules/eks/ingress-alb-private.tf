@@ -10,6 +10,7 @@
 #   ])
 # }
 
+# should this be only one SG? hmmm
 resource "aws_security_group" "lb_sg" {
   name   = "allow_tls"
   vpc_id = var.vpc_id

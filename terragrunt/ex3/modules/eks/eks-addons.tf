@@ -10,6 +10,7 @@ resource "aws_eks_addon" "kube-proxy" {
   resolve_conflicts = "OVERWRITE"
 }
 
+# Actually this addon is uselss because you can't configure nodeselector :facepalm to aws:
 # resource "aws_eks_addon" "coredns" {
 #   depends_on = [
 #     aws_eks_cluster.eksCluster
