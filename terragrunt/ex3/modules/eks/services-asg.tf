@@ -19,6 +19,11 @@ resource "aws_iam_role" "services-role" {
 POLICY
 }
 
+resource "aws_iam_instance_profile" "services-instance-profile" {
+  name = "${var.cluster_name}-services-profile"
+  role = aws_iam_role.services-role.name
+}
+
 resource "aws_iam_role_policy" "services-policy" {
   name   = "PolicyAutoScaling"
   role   = aws_iam_role.services-role.id
@@ -111,5 +116,66 @@ resource "aws_security_group_rule" "albs-to-service-asg" {
   type                     = "ingress"
 }
 
+data "aws_ami" "ami-services" {
+  filter {
+    name   = "name"
+    values = ["amazon-eks-node-${var.eks_version}-v*"]
+  }
 
-## continue creating the ASG
+  most_recent = true
+  owners      = ["602401143452"] # Amazon EKS AMI Account ID
+}
+
+locals {
+  services-nodes-userdata = <<USERDATA
+#!/bin/bash
+set -o xtrace
+/etc/eks/bootstrap.sh ${var.cluster_name} --use-max-pods false --kubelet-extra-args '--eviction-hard=memory.available<500Mi --eviction-soft=\"memory.available<1024Mi\" --eviction-soft-grace-period=\"memory.available=30s\" --system-reserved=memory=1.5Gi --kube-reserved=\"cpu=250m,memory=0.5Gi,ephemeral-storage=1Gi\" --node-labels=env=services --register-with-taints=env=services:NoSchedule'
+USERDATA
+}
+
+resource "aws_launch_template" "services-launch-config" {
+  image_id               = data.aws_ami.ami-services.id
+  instance_type          = "m5.large"
+  name_prefix            = "${var.cluster_name}-services"
+  vpc_security_group_ids = [aws_security_group.services-asg-sg.id]
+  user_data              = base64encode(local.services-nodes-userdata)
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.services-instance-profile.name
+  }
+
+  network_interfaces {
+    associate_public_ip_address = false
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_group" "services-asg" {
+  name_prefix = "${var.cluster_name}-services"
+  max_size    = 5
+  min_size    = 0
+
+  launch_template {
+    id      = aws_launch_template.services-launch-config.id
+    version = "$Latest"
+  }
+
+  vpc_zone_identifier = var.private_subnet_ids
+  health_check_type   = "EC2"
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes        = [desired_capacity, target_group_arns]
+  }
+}
+
+resource "aws_autoscaling_attachment" "asg_attachment" {
+  for_each = var.lb
+
+  autoscaling_group_name = aws_autoscaling_group.services-asg.id
+  lb_target_group_arn    = aws_lb_target_group.ingresses_targetgroup[each.key].id
+}
