@@ -3,7 +3,7 @@ Deploy EKS using terragrunt, based on google and background experience, for sure
 - (Terraform EKS Cluster documentation)[https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_cluster]
 
 # Disclaimer
-Hello Nahuel from the future, this is a message from the past. This code is working but not working-working, it's ok as a guide but not to deploy to production, there are missing resources, hardcoded values and it wasn't fully tested because I'm lazy.
+Hello Nahuel from the future, this is a message from the past. This code is working but not working-working, it's ok as a guide but not to deploy to production, there are missing resources, hardcoded values, there is an error in one resource and it wasn't fully tested because I'm lazy.
 One more thing, I hope you are already millionaire and you are here just for fun because in some moment I've stopped to document what I was doing so... Good luck!
 
 ## Another message from the past
